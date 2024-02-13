@@ -28,10 +28,22 @@ int getSize(char *arg)
 }
 
 int* getRandomMatrix(int size){
+	srand(time(NULL));
 	int *matrix = calloc(size*size, sizeof(int));
 	for(int i=0; i<size; i++)
 		for(int j=0; j<size; j++){
-			matrix[i*size+j]=rand()%10;
+			matrix[i*size+j]=rand()%2;
+		}
+	return matrix;
+}
+
+int* getRandomMatrixSymmetry(int size){
+	srand(time(NULL));
+	int *matrix = calloc(size*size, sizeof(int));
+	for(int i=0; i<size; i++)
+		for(int j=i; j<size; j++){
+			matrix[i*size+j]=rand()%2;
+			if(i!=j) matrix[j*size+i] = matrix[i*size+j];
 		}
 	return matrix;
 }
@@ -45,6 +57,16 @@ void printMatrix(int *matrix, int size){
 	}
 }
 
+int checkSymmetry(int *matrix, int size){
+	for (int i=0; i<size; i++){
+		for(int j=i+1; j<size; j++){
+			if(matrix[i*size+j] == matrix[j*size+i]) printf("1");
+			else printf("0");
+		}
+	}
+	printf("\n");
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -52,7 +74,9 @@ int main(int argc, char *argv[])
 		return 1;
 
 	int size = getSize(argv[1]);
-	int *matrix = getRandomMatrix(size);
+	int *matrix = getRandomMatrixSymmetry(size);
+
+	checkSymmetry(matrix, size);
 
 	printMatrix(matrix, size);
 

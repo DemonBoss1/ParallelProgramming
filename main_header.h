@@ -12,5 +12,6 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <math.h>
+#include <time.h>
 
 #endif // MAIN_HDR_H
