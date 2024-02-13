@@ -8,9 +8,6 @@ int getSize(char *arg)
 	int numberLenght = 0;
 	while (*arg != '\0')
 	{
-
-		printf("%c", *arg);
-
 		numberLenght++;
 		arg++;
 	}
@@ -26,12 +23,26 @@ int getSize(char *arg)
 		int sum = (*arg - '0');
 		for(int j=0;j<i;j++) sum *= 10;
 		size += sum;
-
-		printf("\n%5d,", (*arg - '0'));
-		printf("%10d,", sum);
-		printf("%5d", i);
 	}
 	return size;
+}
+
+int* getRandomMatrix(int size){
+	int *matrix = calloc(size*size, sizeof(int));
+	for(int i=0; i<size; i++)
+		for(int j=0; j<size; j++){
+			matrix[i*size+j]=rand()%10;
+		}
+	return matrix;
+}
+
+void printMatrix(int *matrix, int size){
+	for(int i=0; i<size; i++){
+		for(int j=0; j<size; j++){
+			printf("%5d",matrix[i*size+j]);
+		}
+		printf("\n");
+	}
 }
 
 int main(int argc, char *argv[])
@@ -41,11 +52,9 @@ int main(int argc, char *argv[])
 		return 1;
 
 	int size = getSize(argv[1]);
-	int *matrix;
+	int *matrix = getRandomMatrix(size);
 
-	printf("\n%d\n", size);
-
-	printf("\n%s\n", argv[1]);
+	printMatrix(matrix, size);
 
 	return 0;
 }
