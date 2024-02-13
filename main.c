@@ -3,7 +3,7 @@
 
 #define _GNU_SOURCE
 
-int getSize(char *arg)
+int getNumber(char *arg)
 {
 	int numberLenght = 0;
 	while (*arg != '\0')
@@ -67,13 +67,39 @@ int checkSymmetry(int *matrix, int size){
 	printf("\n");
 }
 
+void* empty(){}
+
 int main(int argc, char *argv[])
 {
-
 	if (argc == 1)
 		return 1;
 
-	int size = getSize(argv[1]);
+	int size = getNumber(argv[1]);
+
+	int count = size/2*(size-1);
+	int countThreads;
+	if (argc == 2)
+		countThreads = 1;
+	else
+		countThreads = getNumber(argv[2]);
+
+	pthread_t* h_process_command_thread = calloc(countThreads, sizeof(pthread_t));
+	for(int i=0; i<countThreads; i++){
+		int ret;
+		ret = pthread_create(
+			&h_process_command_thread[i],
+			NULL,
+			empty,
+			NULL
+		);
+		if (ret != 0) {
+			printf("ERROR: pthread_create failed [%d]\n", ret);
+			return -1;
+		}
+		printf("%ld\n",h_process_command_thread[i]);
+	}
+	printf("\n%5d\n",countThreads);
+
 	int *matrix = getRandomMatrixSymmetry(size);
 
 	checkSymmetry(matrix, size);
