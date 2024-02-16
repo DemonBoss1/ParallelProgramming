@@ -3,6 +3,9 @@
 
 #define _GNU_SOURCE
 
+char* isSymmetry;
+pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+
 int getNumber(char *arg)
 {
 	int numberLenght = 0;
@@ -57,14 +60,59 @@ void printMatrix(int *matrix, int size){
 	}
 }
 
-int checkSymmetry(int *matrix, int size){
-	for (int i=0; i<size; i++){
-		for(int j=i+1; j<size; j++){
-			if(matrix[i*size+j] == matrix[j*size+i]) printf("1");
-			else printf("0");
-		}
+typedef struct 
+{
+	int *matrix;
+	int size;
+} matrixStruct;
+
+typedef struct 
+{
+	matrixStruct *matrix;
+	int startI;
+	int startJ;
+	int count;
+} argCheckSymmetry;
+
+argCheckSymmetry* getArgCheckSymmetry(matrixStruct* matrix, int* startI, int* startJ, int countNumber, int countThreads, int* countOverloadedStreams){
+	argCheckSymmetry* arg = calloc(1, sizeof(argCheckSymmetry));
+	int count;
+	count = countNumber/countThreads;
+	if(*countOverloadedStreams>0){
+		count++;
+		(*countOverloadedStreams)--;
 	}
-	printf("\n");
+	arg->matrix = matrix;
+	arg->startI = *startI;
+	arg->startJ = *startJ;
+	arg->count = count;
+	int nextJ = *startJ + count;
+	while(nextJ>=matrix->size){
+		(*startI)++;
+		nextJ = nextJ - matrix->size + (*startI) + 1;			
+	}
+	*startJ = nextJ;
+	return arg;
+}
+
+int checkSymmetry(argCheckSymmetry* arg){
+	int *matrix = arg->matrix->matrix;
+	int size = arg->matrix->size;
+	int counter = arg->count;
+	for (int i=arg->startI; i<size; i++){
+		for(int j=arg->startJ; j<size; j++){
+			if(matrix[i*size+j]!=matrix[j*size+i]){
+				(void)pthread_mutex_lock(&mtx);
+				isSymmetry = 0;
+				(void)pthread_mutex_unlock(&mtx);
+			}
+			if(counter<1) {
+				return 0;
+			}
+		}
+		arg->startJ++;
+	}
+	pthread_exit((void*)0);
 }
 
 void* empty(){}
@@ -76,7 +124,7 @@ int main(int argc, char *argv[])
 
 	int size = getNumber(argv[1]);
 
-	int count = size/2*(size-1);
+	int count = size*(size-1)/2;
 	int countThreads;
 	if (argc == 2)
 		countThreads = 1;
@@ -84,27 +132,45 @@ int main(int argc, char *argv[])
 		countThreads = getNumber(argv[2]);
 
 	pthread_t* h_process_command_thread = calloc(countThreads, sizeof(pthread_t));
+	
+	int *matrix = getRandomMatrixSymmetry(size);
+
+	matrixStruct* matrixArg = calloc(1, sizeof(matrixStruct));
+	matrixArg->matrix = matrix;
+	matrixArg->size = size;
+
+	argCheckSymmetry** arg = calloc(countThreads, sizeof(argCheckSymmetry*));
+	int startI = 0;
+	int startJ = 1;
+	int countOverloadedStreams = count % countThreads;
+
+	isSymmetry = 1;
+
 	for(int i=0; i<countThreads; i++){
+		arg[i] = getArgCheckSymmetry(matrixArg, &startI, &startJ, count, countThreads, &countOverloadedStreams);
 		int ret;
 		ret = pthread_create(
 			&h_process_command_thread[i],
 			NULL,
-			empty,
-			NULL
+			checkSymmetry,
+			arg[i]
 		);
 		if (ret != 0) {
 			printf("ERROR: pthread_create failed [%d]\n", ret);
 			return -1;
 		}
-		printf("%ld\n",h_process_command_thread[i]);
 	}
-	printf("\n%5d\n",countThreads);
 
-	int *matrix = getRandomMatrixSymmetry(size);
+	for(int i=0; i<countThreads; i++){
+		pthread_join(h_process_command_thread[i], NULL);
+		printf("JOIN ret thread value [%d]\n", i);
+	}
 
-	checkSymmetry(matrix, size);
+	printf("\n");
 
 	printMatrix(matrix, size);
+
+	printf("\n%5d\n",isSymmetry);
 
 	return 0;
 }
