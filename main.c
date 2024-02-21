@@ -40,6 +40,17 @@ int* getRandomMatrix(int size){
 	return matrix;
 }
 
+int* getMatrixFromConsol(int size){
+	int * matrix;
+	matrix = calloc(size*size, sizeof(int));
+		printf("Введите массив: ");
+		for(int i=0; i<size; i++)
+			for(int j=0; j<size; j++){
+				scanf("%d", &matrix[i*size+j]);		
+			}
+	return matrix;
+}
+
 int* getRandomMatrixSymmetry(int size){
 	srand(time(NULL));
 	int *matrix = calloc(size*size, sizeof(int));
@@ -115,26 +126,7 @@ int checkSymmetry(argCheckSymmetry* arg){
 	pthread_exit((void*)0);
 }
 
-void* empty(){}
-
-int main(int argc, char *argv[])
-{
-	if (argc == 1)
-		return 1;
-
-	int size = getNumber(argv[1]);
-
-	int count = size*(size-1)/2;
-	int countThreads;
-	if (argc == 2)
-		countThreads = 1;
-	else
-		countThreads = getNumber(argv[2]);
-
-	pthread_t* h_process_command_thread = calloc(countThreads, sizeof(pthread_t));
-	
-	int *matrix = getRandomMatrixSymmetry(size);
-
+void startPthreads(int* matrix, int size, int countThreads){
 	matrixStruct* matrixArg = calloc(1, sizeof(matrixStruct));
 	matrixArg->matrix = matrix;
 	matrixArg->size = size;
@@ -142,9 +134,11 @@ int main(int argc, char *argv[])
 	argCheckSymmetry** arg = calloc(countThreads, sizeof(argCheckSymmetry*));
 	int startI = 0;
 	int startJ = 1;
+	int count = size*(size-1)/2;
 	int countOverloadedStreams = count % countThreads;
 
 	isSymmetry = 1;
+	pthread_t* h_process_command_thread = calloc(countThreads, sizeof(pthread_t));
 
 	for(int i=0; i<countThreads; i++){
 		arg[i] = getArgCheckSymmetry(matrixArg, &startI, &startJ, count, countThreads, &countOverloadedStreams);
@@ -165,6 +159,34 @@ int main(int argc, char *argv[])
 		pthread_join(h_process_command_thread[i], NULL);
 		printf("JOIN ret thread value [%d]\n", i);
 	}
+
+}
+
+void* empty(){}
+
+int main(int argc, char *argv[])
+{
+	int *matrix;
+	int size;
+	if(argc < 2){
+		printf("Введите размер массива: ");
+		scanf("%d", &size);
+		matrix = getMatrixFromConsol(size);
+	}
+	else{
+		size = getNumber(argv[1]);
+		matrix = getRandomMatrixSymmetry(size);
+	}
+
+	int countThreads;
+	if (argc < 3)
+		countThreads = 1;
+	else
+		countThreads = getNumber(argv[2]);
+
+	
+
+	startPthreads(matrix, size, countThreads);
 
 	printf("\n");
 
